@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import unnamed7 from './assets/images/unnamed-7.png';
 import logo from './assets/images/logo image.png';
 import rectangle60 from './assets/images/rectangle-60.png';
@@ -36,6 +38,10 @@ export default function App() {
   const [features, setFeatures] = useState([]);
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState([]);
+  const heroRef = useRef(null);
+  const productSectionRef = useRef(null);
+  const stickyNavRef = useRef(null);
+  const NAV_HEIGHT = 72;
 
   // Helper to map API image strings to local imports if needed
   // If your API returns full URLs, you can use them directly.
@@ -83,6 +89,50 @@ export default function App() {
             console.error("Error fetching products:", err);
             setProducts([]); // Set empty array on error
         });
+
+  }, []);
+
+  useEffect(() => {
+    try {
+      gsap.registerPlugin(ScrollTrigger);
+      const heroEl = heroRef.current;
+      const navEl = stickyNavRef.current;
+      const productEl = productSectionRef.current;
+      if (!heroEl || !navEl || !productEl) return;
+
+      const ctx = gsap.context(() => {
+        gsap.set(navEl, { autoAlpha: 0, y: -20 });
+
+        // Hero parallax upward
+        gsap.to(heroEl, {
+          y: -NAV_HEIGHT,
+          ease: 'power2.out',
+          scrollTrigger: {
+            trigger: productEl,
+            start: 'top bottom', // when product enters viewport bottom
+            end: `top top+=${NAV_HEIGHT}`, // when product hits nav area
+            scrub: true,
+          },
+        });
+
+        // Navbar fade/slide in
+        gsap.to(navEl, {
+          autoAlpha: 1,
+          y: 0,
+          ease: 'power2.out',
+          scrollTrigger: {
+            trigger: productEl,
+            start: `top top+=${NAV_HEIGHT}`, // as product reaches nav
+            end: `top top+=${NAV_HEIGHT + 1}`,
+            toggleActions: 'play none none reverse',
+          },
+        });
+      });
+
+      return () => ctx.revert();
+    } catch (err) {
+      console.error('GSAP initialization error:', err);
+    }
   }, []);
 
   const getUnion = (index) => {
@@ -112,8 +162,37 @@ export default function App() {
   return (
     <div className="relative w-full min-h-screen bg-white font-montserrat">
       
-      {/* Hero Section */}
-      <div className="relative w-full h-screen overflow-hidden">
+      {/* Sticky Navbar - fades in when scrolled past hero */}
+      <nav
+        ref={stickyNavRef}
+        className="fixed top-0 left-0 w-full z-50 bg-black/80 backdrop-blur-md shadow-lg"
+      >
+        <div className="max-w-[1280px] mx-auto px-4 py-3">
+          <div className="flex justify-between items-center">
+            <div className="h-12 w-32 relative overflow-hidden">
+              <img src={logo} alt="Logo" className="absolute w-[100%] h-[100%] object-contain" />
+            </div>
+            
+            <div className="hidden md:flex gap-10 text-xs text-white uppercase">
+              <a href="#" className="hover:text-yellow-accent transition-colors">Home</a>
+              <a href="#" className="hover:text-yellow-accent transition-colors">About Us</a>
+              <a href="#" className="hover:text-yellow-accent transition-colors">Products</a>
+              <a href="#" className="hover:text-yellow-accent transition-colors">Custom</a>
+              <a href="#" className="hover:text-yellow-accent transition-colors">Contact Us</a>
+            </div>
+            
+            <button className="bg-yellow-accent px-4 py-2 rounded-lg text-xs text-black capitalize hover:bg-yellow-500 transition-colors">
+              Contact Us
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* Hero Section - Sticky */}
+      <div
+        ref={heroRef}
+        className="sticky top-0 w-full h-screen overflow-hidden z-0"
+      >
         {/* Background Image */}
         <div className="absolute inset-0">
             <img src={unnamed7} alt="Hero Background" className="w-full h-full object-cover object-top" />top
@@ -196,7 +275,10 @@ export default function App() {
       </div>
 
       {/* Product Highlight Section */}
-      <div className="w-full h-screen bg-white flex flex-col md:flex-row overflow-hidden">
+      <div
+        ref={productSectionRef}
+        className="relative w-full h-screen bg-white flex flex-col md:flex-row overflow-hidden z-20"
+      >
         <div className="w-full md:w-1/2 flex flex-col justify-center px-10 md:pl-[100px] py-16 h-full">
           <h2 className="font-normal text-4xl md:text-[62px] leading-tight text-black uppercase max-w-xl mb-12">
             Elevate Your Space With Handcrafted Glow
@@ -219,7 +301,7 @@ export default function App() {
       
       {/* Featured Collection Section */}
       {products.length > 0 && (
-        <div className="w-full bg-white py-16">
+        <div className="relative w-full bg-white py-16 z-10">
             <div className="max-w-[1280px] mx-auto px-4">
                 <h2 className="font-['Montserrat:Regular',sans-serif] font-normal text-4xl md:text-5xl text-black uppercase mb-12 text-center">
                     Our Collection
@@ -259,7 +341,7 @@ export default function App() {
       )}
 
       {/* Why Choose Us Section */}
-      <div className="relative w-full h-auto min-h-[650px] bg-gray-50 overflow-hidden">
+      <div className="relative w-full h-auto min-h-[650px] bg-gray-50 overflow-hidden z-10">
         <div className="absolute inset-0">
             <img src={macbookAir2} alt="Background" className="w-full h-full object-cover opacity-50" />
             <div className="absolute inset-0 bg-white/10 backdrop-blur-xl"></div>
@@ -292,7 +374,7 @@ export default function App() {
 
 
       {/* Footer Section */}
-      <div className="relative w-full bg-[#191816] text-white py-16 overflow-visible">
+      <div className="relative w-full bg-[#191816] text-white py-16 overflow-visible z-10">
         {/* Decorative Background Image */}
          <div className="overflow-visible lg:block absolute top-[-170px] right-[2%] w-[380px] h-[500px] opacity-100 pointer-events-none">
              <img src={whatsapp2} alt="Decor" className="w-full h-[100%] object-contain" />
