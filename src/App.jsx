@@ -41,7 +41,9 @@ export default function App() {
   const heroRef = useRef(null);
   const productSectionRef = useRef(null);
   const stickyNavRef = useRef(null);
+  const heroNavRef = useRef(null);
   const NAV_HEIGHT = 72;
+  const [menuOpen, setMenuOpen] = useState(false);
 
   // Helper to map API image strings to local imports if needed
   // If your API returns full URLs, you can use them directly.
@@ -98,10 +100,12 @@ export default function App() {
       const heroEl = heroRef.current;
       const navEl = stickyNavRef.current;
       const productEl = productSectionRef.current;
-      if (!heroEl || !navEl || !productEl) return;
+      const heroNavEl = heroNavRef.current;
+      if (!heroEl || !navEl || !productEl || !heroNavEl) return;
 
       const ctx = gsap.context(() => {
         gsap.set(navEl, { autoAlpha: 0, y: -20 });
+        gsap.set(heroNavEl, { autoAlpha: 1 });
 
         // Hero parallax upward
         gsap.to(heroEl, {
@@ -123,10 +127,22 @@ export default function App() {
           scrollTrigger: {
             trigger: productEl,
             start: `top top+=${NAV_HEIGHT}`, // as product reaches nav
-            end: `top top+=${NAV_HEIGHT + 1}`,
+            end: `top top+=${NAV_HEIGHT + 10}`,
             toggleActions: 'play none none reverse',
           },
         });
+
+        // Hero nav fade out when sticky appears
+        gsap.to(heroNavEl, {
+          autoAlpha: 0,
+          ease: 'power1.out',
+          scrollTrigger: {
+            trigger: productEl,
+            start: `top top+=${NAV_HEIGHT}`, // as product reaches nav
+            end: `top top+=${NAV_HEIGHT + 40}`,
+            toggleActions: 'play none none reverse',
+              },
+            });
       });
 
       return () => ctx.revert();
@@ -165,11 +181,11 @@ export default function App() {
       {/* Sticky Navbar - fades in when scrolled past hero */}
       <nav
         ref={stickyNavRef}
-        className="fixed top-0 left-0 w-full z-50 bg-black/80 backdrop-blur-md shadow-lg"
+        className="fixed top-0 left-0 w-full z-50 bg-black/50 backdrop-blur-md shadow-lg"
       >
-        <div className="max-w-[1280px] mx-auto px-4 py-3">
+        <div className="relative max-w-[1280px] mx-auto px-4 py-2">
           <div className="flex justify-between items-center">
-            <div className="h-12 w-32 relative overflow-hidden">
+            <div className="h-10 w-28 relative overflow-hidden">
               <img src={logo} alt="Logo" className="absolute w-[100%] h-[100%] object-contain" />
             </div>
             
@@ -180,8 +196,32 @@ export default function App() {
               <a href="#" className="hover:text-yellow-accent transition-colors">Custom</a>
               <a href="#" className="hover:text-yellow-accent transition-colors">Contact Us</a>
             </div>
-            
-            <button className="bg-yellow-accent px-4 py-2 rounded-lg text-xs text-black capitalize hover:bg-yellow-500 transition-colors">
+
+            <div className="flex items-center gap-3">
+              <button className="hidden md:inline-flex bg-yellow-accent px-4 py-2 rounded-lg text-xs text-black capitalize hover:bg-yellow-500 transition-colors">
+                Contact Us
+              </button>
+              <button
+                className="md:hidden h-10 w-10 inline-flex items-center justify-center text-white text-2xl"
+                onClick={() => setMenuOpen((prev) => !prev)}
+                aria-label="Toggle menu"
+              >
+                ☰
+              </button>
+            </div>
+          </div>
+          {/* Mobile dropdown - attached, full width */}
+          <div
+            className={`md:hidden absolute left-0 right-0 top-full w-full bg-black/80 backdrop-blur-md p-4 space-y-3 text-white text-sm shadow-lg origin-top transition-all duration-250 ease-out z-40 ${
+              menuOpen ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-2 scale-95 pointer-events-none'
+            }`}
+          >
+            <a href="#" className="block hover:text-yellow-accent">Home</a>
+            <a href="#" className="block hover:text-yellow-accent">About Us</a>
+            <a href="#" className="block hover:text-yellow-accent">Products</a>
+            <a href="#" className="block hover:text-yellow-accent">Custom</a>
+            <a href="#" className="block hover:text-yellow-accent">Contact Us</a>
+            <button className="w-full bg-yellow-accent text-black rounded-md py-2 text-xs font-semibold hover:bg-yellow-500 transition-colors">
               Contact Us
             </button>
           </div>
@@ -208,26 +248,30 @@ export default function App() {
                 
                 {/* Top Bar */}
                 <div className="flex flex-col md:flex-row items-center text-white text-xs w-full">
-                    {/* Left-aligned: Email */}
-                    <div className="flex items-center gap-2 w-full md:w-auto md:justify-start justify-center md:flex-none">
-                        <img src={mailRounded} alt="Email" className="w-6 h-6" />
-                        <span>cozycreationscorner13@gmail.com</span>
-                    </div>
-                    {/* Center-aligned: Offer */}
-                    <div className="font-semibold hidden sm:flex flex-1 items-center justify-center text-center">
+                    {/* Mobile: centered offer only */}
+                    <div className="flex w-full justify-center items-center font-semibold sm:hidden">
                         offer on 25th december for christmas collection
                     </div>
-                    {/* Right-aligned: Call */}
-                    <div className="flex items-center gap-2 w-full md:w-auto md:justify-end justify-center md:flex-none">
-                        <img src={call} alt="Call" className="w-6 h-6" />
-                        <span>+91 80194 01322</span>
+                    {/* Desktop: full bar */}
+                    <div className="hidden sm:flex w-full items-center justify-between gap-4">
+                        <div className="flex items-center gap-2">
+                            <img src={mailRounded} alt="Email" className="w-6 h-6" />
+                            <span>cozycreationscorner13@gmail.com</span>
+                        </div>
+                        <div className="font-semibold text-center flex-1">
+                            offer on 25th december for christmas collection
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <img src={call} alt="Call" className="w-6 h-6" />
+                            <span>+91 80194 01322</span>
+                        </div>
                     </div>
                 </div>
                 
                 <div className="w-full h-[1px] bg-white/20 my-2"></div>
                 
                 {/* Navigation */}
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center relative" ref={heroNavRef}>
                     <div className="h-12 w-32 relative overflow-">
                          <img src={logo} alt="Logo" className="absolute w-[100%] h-[100%] object-contain" />
                     </div>
@@ -240,10 +284,35 @@ export default function App() {
                         <a href="#" className="hover:text-yellow-accent">Contact Us</a>
                     </div>
                     
-                    <button className="bg-yellow-accent px-4 py-2 rounded-lg text-xs text-black capitalize">
-                        Contact Us
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <button className="hidden md:inline-flex bg-yellow-accent px-4 py-2 rounded-lg text-xs text-black capitalize hover:bg-yellow-500 transition-colors">
+                          Contact Us
+                      </button>
+                      <button
+                        className="md:hidden h-10 w-10 inline-flex items-center justify-center text-white text-2xl"
+                        onClick={() => setMenuOpen((prev) => !prev)}
+                        aria-label="Toggle menu"
+                      >
+                        ☰
+                      </button>
+                    </div>
                 </div>
+            </div>
+
+            {/* Hero mobile dropdown - full width, attached to nav */}
+            <div
+              className={`md:hidden absolute left-0 right-0 top-full w-full bg-black/80 backdrop-blur-md p-4 space-y-3 text-white text-sm shadow-lg origin-top transition-all duration-250 ease-out z-40 ${
+                menuOpen ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-2 scale-95 pointer-events-none'
+              }`}
+            >
+              <a href="#" className="block hover:text-yellow-accent">Home</a>
+              <a href="#" className="block hover:text-yellow-accent">About Us</a>
+              <a href="#" className="block hover:text-yellow-accent">Products</a>
+              <a href="#" className="block hover:text-yellow-accent">Custom</a>
+              <a href="#" className="block hover:text-yellow-accent">Contact Us</a>
+              <button className="w-full bg-yellow-accent text-black py-2 text-xs font-semibold hover:bg-yellow-500 transition-colors">
+                Contact Us
+              </button>
             </div>
 
             {/* Hero Text */}
@@ -376,7 +445,7 @@ export default function App() {
       {/* Footer Section */}
       <div className="relative w-full bg-[#191816] text-white py-16 overflow-visible z-10">
         {/* Decorative Background Image */}
-         <div className="overflow-visible lg:block absolute top-[-170px] right-[2%] w-[380px] h-[500px] opacity-100 pointer-events-none">
+         <div className="hidden lg:block overflow-visible absolute top-[-170px] right-[2%] w-[380px] h-[500px] opacity-100 pointer-events-none">
              <img src={whatsapp2} alt="Decor" className="w-full h-[100%] object-contain" />
          </div>
 
